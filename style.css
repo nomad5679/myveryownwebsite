@@ -64,7 +64,7 @@ a {
 
 input, textarea {
   display: block;
-  width: 100%;
+  width: 80%;
   padding: 13px;
   margin-bottom: 12px;
   text-align: center;
@@ -74,6 +74,7 @@ textarea {
   height: 120px;
   resize: vertical;
   text-align: center;
+  width: 80%;
 }
 
 
@@ -92,12 +93,12 @@ textarea {
 
 .message h3 {
   margin: 0 0 8px;
-  font-size: 16px;
+  font-size: 33px;
   text-align: center;
 }
 
 .message p {
-  margin: 0 0 10px;
+  margin: 0 0 22px;
   white-space: pre-wrap;
   text-align: center;
 }
