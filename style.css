@@ -1,3 +1,5 @@
 .joke {
+  height: auto;
+  display: block;
   width: 100%;
 }
