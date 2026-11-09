@@ -4,6 +4,12 @@
   width: 100%;
 }
 
+.thetruth {
+  width:70%;
+  height: 30px;
+  display: block;
+}
+
 video {
     width: 100%;
     height: auto;
