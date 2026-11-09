@@ -39,3 +39,79 @@ a {
   width: 70%;
   padding-top: 100px;
 }
+
+
+* {
+  box-sizing: border-box;
+}
+
+
+.guestbook {
+  max-width: 600px;
+  margin: 30px auto;
+  padding: 25px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+
+.subtitle {
+  text-align: center;
+  color: #777;
+  margin-bottom: 25px;
+}
+
+input, textarea {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  margin-bottom: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font: inherit;
+}
+
+textarea {
+  height: 120px;
+  resize: vertical;
+}
+
+
+
+button:hover {
+  background: #185da9;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+#status {
+  text-align: center;
+  font-size: 14px;
+}
+
+.message {
+  padding: 15px;
+  margin-top: 12px;
+  border: 1px solid #eee;
+  border-radius: 9px;
+  overflow-wrap: anywhere;
+}
+
+.message h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.message p {
+  margin: 0 0 10px;
+  white-space: pre-wrap;
+}
+
+.message small {
+  color: #888;
+}
+
