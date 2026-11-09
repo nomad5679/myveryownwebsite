@@ -85,10 +85,11 @@ textarea {
 }
 
 .message {
+  background-color: #ffffff;
+  color: #222222;
   padding: 15px;
   margin-top: 12px;
   overflow-wrap: anywhere;
-  text-align: center;
 }
 
 .message h3 {
