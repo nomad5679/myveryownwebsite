@@ -43,6 +43,7 @@ a {
 
 * {
   box-sizing: border-box;
+  text-align: center;
 }
 
 
@@ -66,6 +67,7 @@ input, textarea {
   width: 100%;
   padding: 13px;
   margin-bottom: 12px;
+  text-align: center;
 }
 
 textarea {
