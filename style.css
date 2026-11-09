@@ -24,10 +24,8 @@ video {
 
 #bottompad {
   padding-bottom: 700px;
-
 }
 
-.href {
+a {
   font-size: 20px;
-
 }
