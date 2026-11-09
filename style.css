@@ -100,9 +100,10 @@ textarea {
 }
 
 .message p {
-  margin: 0 0 22px;
+  margin: 0 0 16px;
   white-space: pre-wrap;
   text-align: center;
+  font-size: 25px;
 }
 
 .message small {
