@@ -41,6 +41,60 @@ a {
 }
 
 
+
+  .morph-btn {
+    /* Fallback sizes (JS overrides these from the data- attributes) */
+    --btn-w: 200px;
+    --btn-h: 60px;
+    --img-w: 300px;
+    --img-h: 200px;
+ 
+    position: relative;
+    display: inline-block;
+    width: var(--btn-w);
+    height: var(--btn-h);
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: #1f6feb;
+    color: #fff;
+    font: 600 18px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+    cursor: pointer;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition:
+      width 0.5s cubic-bezier(.2, .8, .2, 1),
+      height 0.5s cubic-bezier(.2, .8, .2, 1),
+      border-radius 0.5s cubic-bezier(.2, .8, .2, 1),
+      background-color 0.3s ease;
+  }
+ 
+  .morph-btn .morph-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+    transition: opacity 0.25s ease, transform 0.5s ease;
+  }
+ 
+  /* Hover / keyboard focus: button grows into the image */
+  .morph-btn:hover,
+  .morph-btn:focus-visible {
+    width: var(--img-w);
+    height: var(--img-h);
+    border-radius: 16px;
+    background-color: transparent;
+    outline: none;
+
+
+
+
+
+
 * {
   box-sizing: border-box;
   text-align: center;
