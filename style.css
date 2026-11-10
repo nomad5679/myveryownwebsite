@@ -43,7 +43,7 @@ a {
 .custom-video {
     width: 800px !important;
     height: 300px !important;
-    object-fit: stretch;
+    object-fit: fill;
 }
 
 
