@@ -108,16 +108,16 @@ loadMessages();
 
 
 
-  (function () {
-    document.querySelectorAll(".morph-btn").forEach(function (btn) {
-      var d = btn.dataset;
-      if (d.image)     btn.style.setProperty("--img-url", 'url("' + d.image + '")');
-      if (d.width)     btn.style.setProperty("--btn-w", d.width);
-      if (d.height)    btn.style.setProperty("--btn-h", d.height);
-      if (d.imgWidth)  btn.style.setProperty("--img-w", d.imgWidth);
-      if (d.imgHeight) btn.style.setProperty("--img-h", d.imgHeight);
-    });
-  })();
+
+document.querySelectorAll(".morph-btn").forEach(btn => {
+  const d = btn.dataset;
+  btn.style.setProperty("--img", `url("${d.image}")`);
+  if (d.width) btn.style.setProperty("--w", d.width);
+  if (d.height) btn.style.setProperty("--h", d.height);
+  if (d.hoverWidth) btn.style.setProperty("--hw", d.hoverWidth);
+  if (d.hoverHeight) btn.style.setProperty("--hh", d.hoverHeight);
+});
+ 
 
 
 
