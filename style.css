@@ -89,6 +89,39 @@ a {
     border-radius: 16px;
     background-color: transparent;
     outline: none;
+  }
+ 
+  .morph-btn:hover .morph-label,
+  .morph-btn:focus-visible .morph-label {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+ 
+  /* Image is hidden until hover so the button looks like a normal button */
+  .morph-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: var(--img-url);
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 0.4s ease 0.1s;
+  }
+ 
+  .morph-btn:hover::before,
+  .morph-btn:focus-visible::before {
+    opacity: 1;
+  }
+ 
+  @media (prefers-reduced-motion: reduce) {
+    .morph-btn,
+    .morph-btn .morph-label,
+    .morph-btn::before {
+      transition-duration: 0.01s;
+    }
+  }
+
 
 
 
