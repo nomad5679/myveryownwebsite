@@ -103,3 +103,22 @@ const channel = db
   .subscribe();
 
 loadMessages();
+
+
+
+
+
+  (function () {
+    document.querySelectorAll(".morph-btn").forEach(function (btn) {
+      var d = btn.dataset;
+      if (d.image)     btn.style.setProperty("--img-url", 'url("' + d.image + '")');
+      if (d.width)     btn.style.setProperty("--btn-w", d.width);
+      if (d.height)    btn.style.setProperty("--btn-h", d.height);
+      if (d.imgWidth)  btn.style.setProperty("--img-w", d.imgWidth);
+      if (d.imgHeight) btn.style.setProperty("--img-h", d.imgHeight);
+    });
+  })();
+
+
+
+
