@@ -105,20 +105,3 @@ const channel = db
 loadMessages();
 
 
-
-
-
-
-document.querySelectorAll(".morph-btn").forEach(btn => {
-  const d = btn.dataset;
-  btn.style.setProperty("--img", `url("${d.image}")`);
-  if (d.width) btn.style.setProperty("--w", d.width);
-  if (d.height) btn.style.setProperty("--h", d.height);
-  if (d.hoverWidth) btn.style.setProperty("--hw", d.hoverWidth);
-  if (d.hoverHeight) btn.style.setProperty("--hh", d.hoverHeight);
-});
- 
-
-
-
-
