@@ -40,7 +40,11 @@ a {
   padding-top: 100px;
 }
 
-
+.custom-video {
+    width: 800px !important;
+    height: 300px !important;
+    object-fit: stretch;
+}
 
 
 * {
