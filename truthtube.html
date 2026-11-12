@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TruthTube</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=UnifrakturCook:wght@700&family=IM+Fell+English&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0f0f0f; --txt:#f1f1f1; --sec:#aaa; --chip:#272727; --hover:#3f3f3f; --line:#303030; --red:#f00; --blue:#3ea6ff; --heat:blur(0); }
+  * { box-sizing:border-box; }
+  html, body { margin:0; }
+  body { background:var(--bg); color:var(--txt); font:14px Roboto, Arial, sans-serif; }
+  button { font:inherit; color:inherit; background:none; border:0; cursor:pointer; padding:0; }
+  a { color:inherit; text-decoration:none; }
+  svg { width:24px; height:24px; fill:currentColor; flex:none; }
+
+  /* ---------- header ---------- */
+  .top { position:fixed; top:0; left:0; right:0; height:56px; display:flex; align-items:center; justify-content:space-between;
+         padding:0 16px; background:var(--bg); z-index:50; }
+  .l, .r, .c { display:flex; align-items:center; }
+  .l { gap:8px; min-width:200px; } .r { gap:10px; min-width:200px; justify-content:flex-end; }
+  .c { flex:1; justify-content:center; max-width:760px; }
+  .ico { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative; }
+  .ico:hover { background:var(--hover); }
+  .badge { position:absolute; top:3px; right:1px; background:var(--red); color:#fff; font-size:10px; border-radius:9px; padding:1px 5px; }
+  .logo { display:flex; align-items:center; gap:4px; margin-left:4px; }
+  .play { width:30px; height:21px; background:var(--red); border-radius:6px; display:flex; align-items:center; justify-content:center; }
+  .play svg { width:10px; height:10px; fill:#fff; }
+  .wm { font-size:20px; font-weight:700; letter-spacing:-.06em; }
+  .cc { font-size:10px; color:var(--sec); align-self:flex-start; margin-top:10px; }
+  .search { display:flex; flex:1; max-width:640px; }
+  .search input { flex:1; min-width:0; height:40px; background:#121212; border:1px solid var(--line); border-right:0; border-radius:40px 0 0 40px;
+                  padding:0 16px; color:var(--txt); font-size:16px; outline:none; }
+  .search input:focus { border-color:#1c62b9; }
+  .search button { width:64px; height:40px; background:#222; border:1px solid var(--line); border-radius:0 40px 40px 0; display:flex; align-items:center; justify-content:center; }
+  .mic { width:40px; height:40px; border-radius:50%; background:#181818; margin-left:12px; display:flex; align-items:center; justify-content:center; flex:none; }
+  .pill { height:36px; padding:0 14px 0 10px; border-radius:18px; display:flex; align-items:center; gap:6px; font-weight:500; white-space:nowrap; }
+  .pill svg { width:20px; height:20px; }
+  .create { background:var(--chip); }
+  .signin { border:1px solid var(--line); color:var(--blue); }
+
+  /* ---------- sidebar ---------- */
+  .side { position:fixed; top:56px; left:0; bottom:0; width:240px; padding:12px; overflow-y:auto; background:var(--bg); z-index:40; scrollbar-width:thin; }
+  .si { display:flex; align-items:center; gap:24px; height:40px; padding:0 12px; border-radius:10px; cursor:pointer; }
+  .si:hover { background:var(--hover); }
+  .si.on { background:var(--chip); font-weight:500; }
+  .sect { border-top:1px solid var(--line); margin-top:12px; padding-top:12px; }
+  .sect h4 { margin:0 0 4px; padding:6px 12px; font-size:16px; font-weight:500; }
+  .foot { color:var(--sec); font-size:12px; padding:12px; line-height:1.7; border-top:1px solid var(--line); margin-top:12px; }
+  .hits { display:none; }
+  body.mini .side { width:72px; padding:4px; }
+  body.mini .si { flex-direction:column; gap:6px; height:auto; padding:16px 0 14px; font-size:10px; justify-content:center; }
+  body.mini .sect, body.mini .foot { display:none; }
+
+  /* ---------- page ---------- */
+  .page { margin:56px 0 0 240px; padding:0 24px 120px; }
+  body.mini .page { margin-left:72px; }
+  .ticker { display:none; overflow:hidden; white-space:nowrap; background:#300; color:#ff0; padding:3px 0; }
+  .ticker span { display:inline-block; padding-left:100%; animation:tick 16s linear infinite; }
+  @keyframes tick { to { transform:translateX(-100%); } }
+  .chips { position:sticky; top:56px; z-index:30; background:var(--bg); display:flex; gap:12px; overflow-x:auto; padding:12px 0; scrollbar-width:none; }
+  .chip { flex:none; height:32px; padding:0 12px; border-radius:8px; background:var(--chip); font-weight:500; white-space:nowrap; }
+  .chip:hover { background:var(--hover); }
+  .chip.on { background:#f1f1f1; color:#0f0f0f; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:40px 16px; margin-top:12px; }
+  .card { display:block; cursor:pointer; }
+  .thumb { position:relative; aspect-ratio:16/9; border-radius:12px; overflow:hidden; background:linear-gradient(135deg, #1c1c1c, #2b2b2b); }
+  .thumb video { position:absolute; left:0; top:0; width:100%; height:100%; }
+  .len { position:absolute; right:8px; bottom:8px; z-index:3; background:rgba(0,0,0,.8); padding:1px 4px; border-radius:4px; font-size:12px; font-weight:500; }
+  .card:hover .thumb { border-radius:0; }
+  .info { display:flex; gap:12px; margin-top:12px; }
+  .av { flex:none; width:36px; height:36px; border-radius:50%; background:#3b3b3b; display:flex; align-items:center; justify-content:center; font-weight:500; text-transform:uppercase; }
+  .txt { flex:1; min-width:0; }
+  .title { margin:0 0 4px; font-size:16px; font-weight:500; line-height:22px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .ch, .mt { color:var(--sec); font-size:14px; line-height:20px; }
+  .kb { flex:none; width:24px; height:24px; opacity:0; margin-right:-6px; }
+  .card:hover .kb { opacity:1; }
+  .end { padding:3rem 1rem; text-align:center; color:var(--sec); }
+  .fire { display:none; }
+  .eye { position:absolute; left:0; top:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:4rem; z-index:5; background:rgba(0,0,0,.45); }
+
+  /* ---------- truth button + warning ---------- */
+  .truthBtn { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:60; padding:.7rem 1.6rem; border-radius:999px;
+              background:#1a0507; color:#ff4d4d; font-weight:700; letter-spacing:.12em; text-transform:uppercase; border:1px solid #5a1a1f; }
+  .truthBtn:hover, .truthBtn.on { background:#c1121f; color:#000; }
+  .warn { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.85); z-index:300; padding:1rem; }
+  .warn.show { display:flex; }
+  .warnbox { background:#150608; border:2px solid #f22; border-radius:.8rem; padding:2rem 2.5rem; text-align:center; max-width:27rem; color:#f1f1f1; }
+  .warnbox h2 { margin:0 0 .8rem; color:#f22; font-size:2.6rem; letter-spacing:.1em; animation:blink .8s steps(1) infinite; }
+  .warnbox p { margin:0 0 1.6rem; line-height:1.5; }
+  .warnbox button { font-size:.95rem; padding:.6rem 1.2rem; margin:0 .3rem; border-radius:.5rem; background:#0a0405; color:#f1f1f1; }
+  .warnbox button:first-of-type { background:#f22; color:#0a0405; }
+  @keyframes blink { 50% { opacity:0; } }
+
+  /* ---------- truth-mode extras (hidden normally) ---------- */
+  #vig { display:none; position:fixed; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:90;
+         background:radial-gradient(ellipse at center, transparent 40%, rgba(40,0,6,.6) 78%, rgba(0,0,0,.94) 100%); }
+  #fx { position:fixed; left:0; top:0; pointer-events:none; z-index:95; }
+  .near { position:fixed; left:0; top:0; width:100%; height:100%; display:none; align-items:center; justify-content:center; z-index:200; pointer-events:none; }
+  .near.on { display:flex; }
+  .near span { font-size:min(13vw, 9rem); line-height:1; text-align:center; padding:1rem; }
+  @keyframes vig { 0%{opacity:1} 40%{opacity:.85} 43%{opacity:.4} 46%{opacity:1} 80%{opacity:.9} 83%{opacity:.5} 85%{opacity:1} }
+  @keyframes shiver { 0%{transform:translate(0,0)} 25%{transform:translate(1px,-1px) skewX(1deg)} 50%{transform:translate(-1px,1px)} 75%{transform:translate(1px,1px) skewX(-1deg)} }
+  @keyframes lick { 0%{transform:scaleY(1) translateX(0)} 33%{transform:scaleY(1.2) translateX(-5px)} 66%{transform:scaleY(.88) translateX(4px)} }
+  @keyframes lick2 { 0%{transform:scaleY(1.1) translateX(3px)} 50%{transform:scaleY(.85) translateX(-3px)} }
+  @keyframes burn {
+    0%  { text-shadow:0 0 3px #fff, 0 -4px 5px #ff3, 2px -9px 8px #fd3, -2px -15px 12px #f80, 3px -23px 18px #f20, 0 -33px 24px #800; }
+    33% { text-shadow:0 0 3px #fff, 0 -6px 5px #ff3, -2px -12px 8px #fd3, 3px -19px 13px #f80, -3px -29px 20px #f20, 0 -41px 28px #800; }
+    66% { text-shadow:0 0 3px #fff, 0 -3px 5px #ff3, 2px -8px 8px #fd3, -3px -13px 11px #f80, 4px -21px 17px #f20, 0 -30px 22px #800; }
+  }
+
+  body.truth { --bg:#0a0405; --txt:#f2e3c8; --sec:#c0662f; --chip:#1a0507; --hover:#3b0a0f; --line:#4a1a14; --red:#c1121f; --blue:#ff3b1f;
+               animation:burn .22s steps(1) infinite; }
+  body.truth * { font-family:"IM Fell English", Georgia, serif !important; cursor:crosshair; }
+  body.truth :is(.wm, .chip, .pill, .si span, .truthBtn, .near span, .warnbox h2, .warnbox button, .sect h4, .ticker span)
+    { font-family:"UnifrakturCook", "Old English Text MT", fantasy !important; }
+  body.truth #vig { display:block; animation:vig 6s steps(1) infinite; }
+  body.truth .ticker { display:block; }
+  body.truth .hits { display:block; margin-top:10px; color:#ff0; }
+  body.truth :is(.title, .ch, .mt, .si span) { animation:shiver .35s steps(1) infinite; }
+  body.truth .title { filter:blur(.4px); }
+  body.truth :is(.chip, .pill, .si) { clip-path:var(--clip, none); }
+  body.truth :is(.chip, .pill):hover, body.truth .si:hover { background:#c1121f; color:#000; }
+  body.truth .chip.on { background:#7a0c14; color:#fff; }
+  body.truth .chip:nth-child(3)::after { content:" NEW!"; color:#ff0; animation:blink .5s steps(1) infinite; }
+  body.truth .thumb { border-radius:2px; box-shadow:0 0 18px #f40, 0 0 42px #a00; }
+  body.truth .thumb video { filter:var(--heat) sepia(.7) saturate(3.5) contrast(1.35) brightness(.75) hue-rotate(-18deg); }
+  body.truth .thumb.inv video { filter:invert(1) !important; }
+  body.truth .glitch { transform:translateX(5px) skewX(-12deg); filter:hue-rotate(60deg) contrast(1.5); }
+  body.truth .fire { display:block; position:absolute; left:0; top:0; width:100%; height:100%; z-index:2; pointer-events:none; mix-blend-mode:screen;
+                     transform-origin:bottom; animation:lick .3s steps(3) infinite;
+                     background:radial-gradient(ellipse 22% 60% at 15% 100%, #ff0 0, #f80 40%, transparent 72%),
+                                radial-gradient(ellipse 20% 75% at 42% 100%, #fd3 0, #f40 45%, transparent 74%),
+                                radial-gradient(ellipse 24% 65% at 70% 100%, #ff0 0, #f60 40%, transparent 72%),
+                                radial-gradient(ellipse 18% 55% at 92% 100%, #fd3 0, #f30 45%, transparent 72%),
+                                linear-gradient(to top, #f40 0, transparent 55%); }
+  body.truth .fire::after { content:""; position:absolute; left:0; top:0; width:100%; height:100%; transform-origin:bottom; animation:lick2 .22s steps(2) infinite;
+                            background:radial-gradient(ellipse 16% 50% at 28% 100%, #fff 0, #fa0 35%, transparent 70%),
+                                       radial-gradient(ellipse 16% 58% at 58% 100%, #fff 0, #f50 38%, transparent 70%),
+                                       radial-gradient(ellipse 14% 48% at 82% 100%, #fff 0, #fa0 35%, transparent 70%); }
+  body.truth .truthBtn { font-weight:400; font-size:1.2rem; }
+
+  @media (max-width:800px) { .mic, .create span, .cc { display:none; } .l, .r { min-width:0; } .c { margin:0 8px; } }
+  @media (max-width:640px) { .side { display:none; } .page, body.mini .page { margin-left:0; padding:0 12px 120px; } .signin span { display:none; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="heat" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence id="turb" type="fractalNoise" baseFrequency="0.01 0.07" numOctaves="2" seed="1"/>
+    <feDisplacementMap id="disp" in="SourceGraphic" scale="16"/>
+  </filter>
+</svg>
+
+<div id="vig"></div>
+<canvas id="fx"></canvas>
+<div class="near" id="near"><span>THE TRUTH IS NEAR</span></div>
+
+<div class="warn" id="warn">
+  <div class="warnbox">
+    <h2>WARNING</h2>
+    <p>truth mode sets every video on fire, rewrites the buttons, and may show you things.</p>
+    <div><button id="warnYes">enter truth mode</button><button id="warnNo">cancel</button></div>
+  </div>
+</div>
+
+<header class="top">
+  <div class="l">
+    <button class="ico" id="menu" aria-label="Menu"><i data-i="menu"></i></button>
+    <a class="logo" href="#" id="logo"><span class="play"><svg viewBox="0 0 10 10"><path d="M3 1.5l5 3.5-5 3.5z"/></svg></span><span class="wm">TruthTube</span><span class="cc">US</span></a>
+  </div>
+  <div class="c">
+    <form class="search" onsubmit="return false"><input type="text" placeholder="Search" aria-label="Search"><button aria-label="Search"><i data-i="search"></i></button></form>
+    <button class="mic" aria-label="Search with your voice"><i data-i="mic"></i></button>
+  </div>
+  <div class="r">
+    <button class="pill create"><i data-i="plus"></i><span>Create</span></button>
+    <button class="ico" aria-label="Notifications"><i data-i="bell"></i><span class="badge">9+</span></button>
+    <button class="ico" aria-label="Settings"><i data-i="kebab"></i></button>
+    <button class="pill signin"><i data-i="person"></i><span>Sign in</span></button>
+  </div>
+</header>
+
+<aside class="side" id="side"></aside>
+
+<main class="page">
+  <div class="ticker"><span>★ WELCOME TO TRUTHTUBE ★ THEY DON'T WANT YOU TO SEE THIS ★ BEST VIEWED WITH YOUR EYES OPEN ★ DO NOT LOOK AWAY ★</span></div>
+  <div class="chips" id="chips"></div>
+  <div class="grid" id="grid"></div>
+  <div id="sentinel"></div>
+  <div class="end" id="end" hidden>you have reached the end. there is no end.</div>
+</main>
+
+<button class="truthBtn" id="truthBtn">Truth Mode</button>
+
+<script>
+// ======================================================================
+//  EDIT THIS SECTION
+// ======================================================================
+
+// Your videos. These autoplay (muted, looping) as the thumbnails on the homepage.
+//   src    -> path/URL of the video file (mp4/webm). Leave "" to show an empty dark thumbnail.
+//   link   -> the page this video opens when clicked (e.g. "page1.html"). Leave "" for no link.
+const VIDEOS = [
+  { src:"videos/video1.mp4",  link:"", title:"They never told you this about your toaster",       channel:"Truth Daily",       views:"1.2M views",   age:"3 days ago",    length:"12:04" },
+  { src:"videos/video2.mp4",  link:"", title:"I watched the same clock for 11 hours (it moved)",  channel:"Basement Studios",  views:"842K views",   age:"1 week ago",    length:"11:03:12" },
+  { src:"videos/video3.mp4",  link:"", title:"Why nobody talks about the third Tuesday",          channel:"Concerned Citizen", views:"310K views",   age:"2 weeks ago",   length:"18:47" },
+  { src:"videos/video4.mp4",  link:"", title:"ASMR: a door that isn't there",                     channel:"Static Hour",       views:"2.4M views",   age:"5 months ago",  length:"3:00:00" },
+  { src:"videos/video5.mp4",  link:"", title:"Top 10 numbers that don't exist",                   channel:"WATCH.THIS",        views:"96K views",    age:"9 hours ago",   length:"10:10" },
+  { src:"videos/video6.mp4",  link:"", title:"The elevator video (do NOT watch at night)",        channel:"Ep. 0 Network",     views:"5.1M views",   age:"1 year ago",    length:"7:13" },
+  { src:"videos/video7.mp4",  link:"", title:"Unboxing: a box",                                   channel:"Truth Daily",       views:"12K views",    age:"4 days ago",    length:"0:41" },
+  { src:"videos/video8.mp4",  link:"", title:"What your reflection did last night",               channel:"Basement Studios",  views:"780K views",   age:"3 weeks ago",   length:"22:19" },
+  { src:"videos/video9.mp4",  link:"", title:"Me explaining the truth for 40 minutes",            channel:"Concerned Citizen", views:"44K views",    age:"2 days ago",    length:"40:00" },
+  { src:"videos/video10.mp4", link:"", title:"Is this real? It is.",                              channel:"WATCH.THIS",        views:"1.9M views",   age:"6 months ago",  length:"5:55" },
+  { src:"videos/video11.mp4", link:"", title:"Nothing happens for 3 hours",                       channel:"Static Hour",       views:"666K views",   age:"13 hours ago",  length:"3:00:00" },
+  { src:"videos/video12.mp4", link:"", title:"The mirror stream (LIVE)",                          channel:"Ep. 0 Network",     views:"9 watching",   age:"Streamed live", length:"LIVE" },
+];
+
+// The sidebar button named "Subscriptions" (left menu, 3rd item) links to this page. "" = does nothing.
+const NAV_LINK = "speak.html";
+
+const OPEN_IN_NEW_TAB = false;   // open video / button links in a new tab?
+const VIDEO_FIT = "fill";        // "fill" = stretch to the thumbnail size, "cover" = crop to fit
+const FLASH_EVERY = [1, 10];    // Truth Mode: "THE TRUTH IS NEAR" flashes every [min, max] seconds
+const HEAT_SHIMMER = true;       // Truth Mode: wobbly heat-haze on videos (set false if it lags)
+const MAX_CARDS = 120;           // how far the endless feed goes before "there is no end"
+
+// ======================================================================
+//  (you shouldn't need to touch anything below)
+// ======================================================================
+const $ = s => document.querySelector(s), rnd = a => a[Math.random() * a.length | 0];
+let truth = false, warnOpen = false, swapT = 0, chaosT = 0, flashT = 0, heatT = 0, titleT = 0, hitsT = 0;
+
+// ---------- icons ----------
+const ICONS = {
+  menu:"M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z",
+  search:"M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z",
+  mic:"M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z",
+  plus:"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
+  bell:"M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z",
+  kebab:"M12 8a2 2 0 100-4 2 2 0 000 4zm0 2a2 2 0 100 4 2 2 0 000-4zm0 6a2 2 0 100 4 2 2 0 000-4z",
+  person:"M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z",
+  home:"M12 3 2 12h3v8h5v-6h4v6h5v-8h3L12 3z",
+  shorts:"M7 2l10 10-4 2 4 8L7 12l4-2z",
+  subs:"M4 4h16v2H4zm2 4h12v2H6zm-2 4h16v8H4z",
+  history:"M12 2a10 10 0 100 20 10 10 0 000-20zm1 5v5l4 2-1 1.7-5-2.7V7z",
+  list:"M3 6h14v2H3zm0 4h14v2H3zm0 4h9v2H3zm12 0v6l5-3z",
+  video:"M4 4h16v16H4V4zm6 4v8l6-4-6-4z",
+  clock:"M12 2a10 10 0 100 20 10 10 0 000-20zm1 5v5l4 2-1 1.7-5-2.7V7z",
+  like:"M2 21h4V9H2v12zM23 10c0-1.1-.9-2-2-2h-6.3l1-4.6v-.3c0-.4-.2-.8-.4-1.1L14.2 1 7.6 7.6C7.2 8 7 8.5 7 9v10c0 1.1.9 2 2 2h9c.8 0 1.5-.5 1.8-1.2l3-7c.1-.2.2-.5.2-.8v-2z",
+  trend:"M3 17l6-6 4 4 8-8-1.4-1.4L13 12.2l-4-4L1.6 15.6 3 17z",
+  music:"M12 3v10.55A4 4 0 1014 17V7h4V3h-6z",
+  game:"M6 8h12a4 4 0 014 4v4l-2 1-3-3H7l-3 3-2-1v-4a4 4 0 014-4zm2 2v1H7v2h1v1h2v-1h1v-2h-1v-1H8z",
+  news:"M4 4h14v14a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 3v2h10V7H6zm0 4v2h10v-2H6z",
+  sport:"M12 2a10 10 0 100 20 10 10 0 000-20zm0 3l3 2-1 4h-4L9 7l3-2z"
+};
+const svg = n => `<svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="${ICONS[n]}"/></svg>`;
+const icons = root => root.querySelectorAll("i[data-i]").forEach(el => el.outerHTML = svg(el.dataset.i));
+icons(document);
+
+// ---------- sidebar + chips ----------
+const SIDE = [
+  { items:[["home", "Home"], ["shorts", "Shorts"], ["subs", "Subscriptions"]] },
+  { h:"You", items:[["history", "History"], ["list", "Playlists"], ["video", "Your videos"], ["clock", "Watch later"], ["like", "Liked videos"]] },
+  { h:"Explore", items:[["trend", "Trending"], ["music", "Music"], ["game", "Gaming"], ["news", "News"], ["sport", "Sports"]] }
+];
+$("#side").innerHTML = SIDE.map(sec => `<div class="${sec.h ? "sect" : ""}">${sec.h ? `<h4>${sec.h}</h4>` : ""}` +
+  sec.items.map(([ic, t]) => `<a class="si${t === "Home" ? " on" : ""}"${t === "Subscriptions" ? " data-nav" : ""}><i data-i="${ic}"></i><span>${t}</span></a>`).join("") + "</div>").join("") +
+  `<div class="foot">About &nbsp;Press &nbsp;Copyright<br>Contact us &nbsp;Creators<br>Advertise &nbsp;Developers<br><br>Terms &nbsp;Privacy &nbsp;Policy<br><br>&copy; 2026 TruthTube<div class="hits">you are visitor #<b id="hits">000666</b></div></div>`;
+icons($("#side"));
+const nav = $("[data-nav]");
+if (NAV_LINK) { nav.href = NAV_LINK; if (OPEN_IN_NEW_TAB) nav.target = "_blank"; }
+$("#side").onclick = e => { const a = e.target.closest(".si"); if (!a) return; document.querySelectorAll(".si").forEach(x => x.classList.toggle("on", x === a)); };
+
+const CHIPS = ["All", "Truth", "Music", "Live", "Gaming", "Podcasts", "Mixes", "Static", "Recently uploaded", "Watched", "Unwatched", "Things that blink", "New to you"];
+$("#chips").innerHTML = CHIPS.map((c, i) => `<button class="chip${i ? "" : " on"}">${c}</button>`).join("");
+$("#chips").onclick = e => { const b = e.target.closest(".chip"); if (!b) return; document.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === b)); };
+
+$("#menu").onclick = () => document.body.classList.toggle("mini");
+if (innerWidth < 1100) document.body.classList.add("mini");
+
+// ---------- the feed ----------
+const grid = $("#grid"), sentinel = $("#sentinel");
+const io = new IntersectionObserver(es => es.forEach(en => {
+  const vd = en.target.querySelector("video"); if (!vd) return;
+  if (en.isIntersecting) vd.play().catch(() => {}); else vd.pause();
+}), { threshold:.15 });
+
+function card(v) {
+  const a = document.createElement(v.link ? "a" : "div");
+  a.className = "card";
+  if (v.link) { a.href = v.link; if (OPEN_IN_NEW_TAB) a.target = "_blank"; }
+  a.innerHTML = `<div class="thumb"><video></video><div class="fire"></div><span class="len"></span></div>
+    <div class="info"><div class="av"></div><div class="txt"><h3 class="title"></h3><div class="ch"></div><div class="mt"></div></div>
+    <button class="kb" aria-label="Action menu"><i data-i="kebab"></i></button></div>`;
+  icons(a);
+  a.querySelector(".len").textContent = v.length || "";
+  a.querySelector(".av").textContent = (v.channel || "?")[0];
+  a.querySelector(".title").textContent = v.title;
+  a.querySelector(".ch").textContent = v.channel;
+  a.querySelector(".mt").textContent = `${v.views} \u2022 ${v.age}`;
+  const vd = a.querySelector("video");
+  if (v.src) { vd.muted = true; vd.loop = true; vd.playsInline = true; vd.autoplay = true; vd.preload = "metadata"; vd.style.objectFit = VIDEO_FIT; vd.src = v.src; }
+  else vd.remove();
+  io.observe(a);
+  return a;
+}
+
+let cards = 0, round = 0;
+function addBatch() {
+  if (!VIDEOS.length || cards >= MAX_CARDS) return;
+  const list = round++ ? [...VIDEOS].sort(() => Math.random() - .5) : VIDEOS;
+  for (let i = 0, n = Math.max(12, list.length); i < n && cards < MAX_CARDS; i++) { grid.append(card(list[i % list.length])); cards++; }
+  if (cards >= MAX_CARDS) $("#end").hidden = false;
+  else if (sentinel.getBoundingClientRect().top < innerHeight + 800) addBatch();
+}
+new IntersectionObserver(es => { if (es[0].isIntersecting) addBatch(); }, { rootMargin:"800px" }).observe(sentinel);
+addBatch();
+
+// ---------- ember canvas (truth mode) ----------
+const cv = $("#fx"), cx = cv.getContext("2d"), bits = [];
+let W = 0, H = 0, last = performance.now(), amb = 0;
+function sizeFx() {
+  const d = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+  cv.width = W * d; cv.height = H * d; cv.style.width = W + "px"; cv.style.height = H + "px"; cx.setTransform(d, 0, 0, d, 0, 0);
+}
+function ember(x, y, spread) {
+  bits.push({ x, y, vx:(Math.random() - .5) * 60 * spread, vy:-40 - Math.random() * 130, s:2 + Math.random() * 3,
+              life:.6 + Math.random() * 1, c:rnd(["#ffee33", "#ff9a00", "#ff3b1f", "#ffffff"]) });
+}
+function fxLoop(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  if (truth) { amb += 45 * dt; while (amb >= 1) { ember(Math.random() * W, H + 5, 3); amb--; } }
+  cx.clearRect(0, 0, W, H);
+  for (let i = bits.length - 1; i >= 0; i--) {
+    const b = bits[i]; b.life -= dt;
+    if (b.life <= 0) { bits.splice(i, 1); continue; }
+    b.x += b.vx * dt; b.y += b.vy * dt; b.vx += (Math.random() - .5) * 120 * dt;
+    cx.globalAlpha = Math.min(1, b.life * 1.5); cx.fillStyle = b.c; cx.fillRect(b.x, b.y, b.s, b.s);
+  }
+  cx.globalAlpha = 1;
+  requestAnimationFrame(fxLoop);
+}
+sizeFx(); requestAnimationFrame(fxLoop);
+addEventListener("resize", sizeFx);
+document.addEventListener("mousemove", e => { if (truth) { ember(e.clientX, e.clientY, 1); ember(e.clientX, e.clientY, 1); } });
+
+// ---------- truth mode: chaos ----------
+const CREEPY = ["They are watching you", "it sees you", "don't look", "behind you", "WAKE UP", "you were warned", "stop scrolling", "they know",
+                "who is typing?", "help", "it's already here", "look closer", "nobody is here", "turn around", "WHY ARE YOU STILL HERE", "they can hear the scrolling"];
+const VIEWS = ["\u221E views", "666 views", "you views", "views: [REDACTED]", "0 views \u2022 0 seconds ago", "everyone views"];
+const RUNES = "\u2020\u2021\u16A6\u16DF\u00B6\u00A7\u03A9\u00D8";
+const TABS = ["they are watching you", "TruthTube", "look behind you", "help", "TruthTube", "it's still loading you"];
+const FLASHES = [["#fff", "#000"], ["#000", "#f00"], ["#a00", "#fff"], ["#000", "#fff"], ["#f00", "#000"]];
+
+const inView = el => { const r = el.getBoundingClientRect(); return r.bottom > 60 && r.top < innerHeight && r.right > 0 && r.left < innerWidth; };
+const label = el => el.querySelector("span") || el;
+
+function swap(el, text, ms) {
+  if (el.dataset.busy) return; el.dataset.busy = 1;
+  const o = el.textContent; el.textContent = text;
+  setTimeout(() => { delete el.dataset.busy; el.textContent = o; }, ms);
+}
+function corrupt(el) {
+  if (el.dataset.busy) return; el.dataset.busy = 1;
+  const o = el.textContent;
+  el.textContent = [...o].map(c => c !== " " && Math.random() < .3 ? rnd(RUNES) : c).join("");
+  setTimeout(() => { delete el.dataset.busy; el.textContent = o; }, 250 + Math.random() * 400);
+}
+function shard() {
+  const j = m => Math.random() * m;
+  const p = [[j(10), j(25)], [35 + j(30), j(12)], [90 + j(10), j(25)], [100 - j(8), 50 + j(10)], [90 + j(10), 100 - j(25)], [35 + j(30), 100 - j(12)], [j(10), 100 - j(25)], [j(6), 40 + j(20)]];
+  return "polygon(" + p.map(([x, y]) => x.toFixed(0) + "% " + y.toFixed(0) + "%").join(",") + ")";
+}
+
+// buttons / labels randomly say unhinged things
+function swapTick() {
+  const pool = [...document.querySelectorAll(".chip, .si, .pill")].filter(inView);
+  for (let i = 0, n = 1 + (Math.random() * 3 | 0); i < n; i++) { const el = rnd(pool); if (el) swap(label(el), rnd(CREEPY), 900 + Math.random() * 1800); }
+  const vis = [...document.querySelectorAll(".card")].filter(inView), c = rnd(vis);
+  if (c) {
+    const r = Math.random();
+    if (r < .35) corrupt(c.querySelector(".title"));
+    else if (r < .6) swap(c.querySelector(".mt"), rnd(VIEWS), 1200);
+    else if (r < .8) swap(c.querySelector(".ch"), rnd(["[REDACTED]", "YOU", "nobody", "???"]), 1400);
+  }
+  swapT = setTimeout(swapTick, 1000 + Math.random() * 2500);
+}
+
+// twitchy visual chaos
+function chaosTick() {
+  const vis = [...document.querySelectorAll(".card")].filter(inView), c = rnd(vis);
+  if (c && Math.random() < .5) {
+    c.style.transform = `rotate(${(Math.random() - .5) * 5}deg) scale(${.96 + Math.random() * .08})`;
+    setTimeout(() => c.style.transform = "", 150 + Math.random() * 350);
+  }
+  if (c) {
+    const t = c.querySelector(".thumb"), vd = c.querySelector("video");
+    if (vd && Math.random() < .22) { vd.playbackRate = rnd([.25, .5, 2.5, 3]); setTimeout(() => vd.playbackRate = 1, 1200 + Math.random() * 1500); }
+    if (Math.random() < .2) { t.classList.add("inv"); setTimeout(() => t.classList.remove("inv"), 90); }
+    if (Math.random() < .12) {
+      const e = document.createElement("div"); e.className = "eye"; e.textContent = "\uD83D\uDC41"; t.append(e); setTimeout(() => e.remove(), 450);
+    }
+  }
+  if (Math.random() < .2) {
+    const g = rnd([$(".logo"), $(".logo"), c, $(".chips")]); if (g) { g.classList.add("glitch"); setTimeout(() => g.classList.remove("glitch"), 90 + Math.random() * 140); }
+  }
+  for (let i = 0; i < 3; i++) { const b = rnd([...document.querySelectorAll(".chip, .pill, .si")]); if (b) b.style.setProperty("--clip", shard()); }
+}
+
+// the rare full-screen scare
+function truthNear() {
+  const n = $("#near"), t = n.firstElementChild; let i = 0;
+  n.classList.add("on");
+  const iv = setInterval(() => {
+    const [b, c] = FLASHES[i % FLASHES.length];
+    n.style.background = b; t.style.color = c;
+    t.style.transform = `translate(${(Math.random() - .5) * 40}px, ${(Math.random() - .5) * 30}px) scale(${1 + Math.random() * .15}) rotate(${(Math.random() - .5) * 6}deg)`;
+    if (++i > 16) { clearInterval(iv); n.classList.remove("on"); n.style.background = ""; }
+  }, 80);
+}
+function scheduleFlash() {
+  flashT = setTimeout(() => { truthNear(); scheduleFlash(); }, (FLASH_EVERY[0] + Math.random() * (FLASH_EVERY[1] - FLASH_EVERY[0])) * 1000);
+}
+
+// hover also scrambles buttons
+document.addEventListener("mouseover", e => {
+  if (!truth) return;
+  const b = e.target.closest(".chip, .si, .pill");
+  if (!b || b.contains(e.relatedTarget) || Math.random() > .4) return;
+  swap(label(b), rnd(CREEPY), 900);
+});
+
+// ---------- entering / leaving truth mode ----------
+function setTruth(on) {
+  truth = on; document.body.classList.toggle("truth", on); $("#truthBtn").classList.toggle("on", on);
+  [swapT, flashT, titleT].forEach(clearTimeout); [chaosT, heatT, hitsT].forEach(clearInterval);
+  document.querySelectorAll(".chip, .pill, .si").forEach(b => b.style.removeProperty("--clip"));
+  document.title = "TruthTube";
+  if (!on) return;
+  document.documentElement.style.setProperty("--heat", HEAT_SHIMMER ? "url(#heat)" : "blur(0)");
+  chaosT = setInterval(chaosTick, 500);
+  swapT = setTimeout(swapTick, 1200);
+  scheduleFlash();
+  heatT = setInterval(() => {
+    $("#turb").setAttribute("seed", Math.random() * 100 | 0);
+    $("#disp").setAttribute("scale", 10 + Math.random() * 16);
+  }, 110);
+  (function tab() { document.title = rnd(TABS); titleT = setTimeout(tab, 2500 + Math.random() * 3000); })();
+  hitsT = setInterval(() => { $("#hits").textContent = String(666 + (Math.random() * 9000 | 0)).padStart(6, "0"); }, 1700);
+}
+
+function closeWarn() { warnOpen = false; $("#warn").classList.remove("show"); }
+$("#truthBtn").onclick = e => { e.target.blur(); if (truth) setTruth(false); else { $("#warn").classList.add("show"); warnOpen = true; } };
+$("#warnYes").onclick = e => { e.target.blur(); closeWarn(); setTruth(true); };
+$("#warnNo").onclick = e => { e.target.blur(); closeWarn(); };
+document.addEventListener("keydown", e => {
+  if (!warnOpen) return;
+  if (e.key === "Enter") { e.preventDefault(); $("#warnYes").click(); }
+  else if (e.key === "Escape") $("#warnNo").click();
+});
+</script>
+</body>
+</html>
