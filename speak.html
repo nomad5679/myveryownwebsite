@@ -47,6 +47,281 @@
   </main>
 </center>
 
+  <!-- ===================================================================
+       MESSAGE FILTER + ANTI-SPAM
+       Runs in the browser BEFORE anything is sent to your database.
+       It must stay ABOVE the two <script> tags below so it loads first.
+       =================================================================== -->
+  <script>
+  (() => {
+    "use strict";
+
+    /* ------------------------------------------------------------------
+       SETTINGS  (change these freely)
+       ------------------------------------------------------------------ */
+    const CFG = {
+      blockMildCurses : true,          // damn / hell / crap / wtf etc. (set false to allow mild words)
+      cooldownMs      : 5000,          // minimum wait between two messages
+      maxPerMinute    : 6,             // max messages per minute from one browser
+      maxPerHour      : 40,            // max messages per hour from one browser
+      repeatWindowMs  : 5 * 60 * 1000, // can't send the same message again within this time
+      minPageMs       : 1500,          // submitting faster than this after page load = bot
+      shoutMinLetters : 30,            // ALL CAPS rule only applies to messages with this many letters...
+      shoutRatio      : 0.9,           // ...and more than this share of capitals
+      maxLineBreaks   : 6              // max line breaks in one message
+    };
+
+    /* ------------------------------------------------------------------
+       WORD LISTS  (lowercase letters only; add or remove words as you like)
+         words   = blocked as a whole word  (also catches plurals, -ed, -ing, -hole, -head)
+         mild    = same, but only when blockMildCurses is true
+         sub     = blocked even INSIDE another word (only for words that are never innocent)
+         wild    = full words used to catch censored versions like f*ck or sh*t
+         phrases = blocked as a phrase, separated by |
+       Spaced out (f u c k), dotted (f.u.c.k), leetspeak (sh1t, @ss), repeated
+       letters (fuuuuck), look-alike unicode letters and zero-width characters
+       are all handled automatically.
+       ------------------------------------------------------------------ */
+    const CATS = [
+      {
+        cat: "curse",
+        words: "ass arse arsehole asshole asshat dumbass jackass fatass bastard bollocks cock dick dickhead prick twat wanker " +
+               "fag kike spic chink gook wetback tranny retard paki jackoff jerkoff fck fuk fuq phuck fcuk btch biatch sht shyt cnt dck",
+        mild:  "damn damned dammit damnit goddamn goddamnit hell crap crappy piss pissed pissing wtf stfu gtfo ffs fml omfg " +
+               "douche douchebag badass kickass hardass smartass",
+        sub:   "fuck shit bitch cunt nigg fagg whore slut",
+        wild:  "fuck fucked fucker fucking fucks shit shits shitty bitch bitches cunt cunts slut whore whores nigger nigga niggas " +
+               "faggot fag ass asses asshole dick dicks cock cocks damn hell crap piss bastard prick twat",
+        phrases: ""
+      },
+      {
+        cat: "sexual",
+        words: "sex sexy sexual sexually sexting sext nude nudes naked nudity boob boobs boobie boobies tit tits titty titties " +
+               "nipple nipples penis vagina vulva clit clitoris cum cumming horny erotic erotica fetish bdsm kink kinky milf dilf " +
+               "thong lingerie stripper prostitute prostitutes hooker incest rape raped raping rapist rapes molest molested " +
+               "molester pedo pedophile pedophilia paedo lolicon anal anus ejaculate ejaculation erection boner fap fapping " +
+               "camgirl nsfw rimjob gangbang threesome orgy intercourse genitals genital testicle testicles scrotum bukkake",
+        sub:   "porn pussy jizz blowjob handjob cumshot masturbat orgasm hentai dildo onlyfans",
+        wild:  "sex sexy porn tits tit boobs boob nude nudes naked penis vagina pussy cum horny anal anus rape rapes rapist nsfw",
+        phrases: "blow job|hand job|send nudes|send pics|sugar daddy|sugar mommy|jerk off|jack off|porn star|strip club|one night stand"
+      },
+      {
+        cat: "drugs",
+        words: "drug drugs druggie druggy crackhead heroin meth methhead lsd dmt shrooms ecstasy oxy oxycontin oxycodone " +
+               "adderall opioid opioids opium pcp bong stoned stoner weed cokehead",
+        sub:   "cocaine marijuana cannabis fentanyl ketamine xanax mdma methamphet ganja",
+        wild:  "weed meth drug drugs lsd heroin cocaine",
+        phrases: "get high|getting high|smoke weed|smoking weed|drug dealer|magic mushrooms|crack cocaine|crystal meth|shoot up|do drugs|doing drugs|on drugs"
+      }
+    ];
+
+    // Innocent words that contain a blocked word. These are always allowed.
+    const SAFE = new Set(("shitake shitakes shiite shiites shiitake shiitakes scunthorpe niggle niggled niggles niggling niggly " +
+      "weeding weeded weeder weeders pricked pricking kinked kinking cocked cocking craps").split(" "));
+
+    const MSG = {
+      curse : "Please keep it clean \u2014 no cursing.",
+      sexual: "Please keep it clean \u2014 no sexual content.",
+      drugs : "Please keep it clean \u2014 no drug references.",
+      spam  : "That looks like spam. Please write a normal message."
+    };
+
+    /* ------------------------------------------------------------------
+       Compile the lists
+       ------------------------------------------------------------------ */
+    // "ass" -> a{1,}s{2,}  : letters may be repeated (assss) but "as" is not "ass"
+    const rep = w => w.replace(/(.)\1*/g, (m, c) => c + "{" + m.length + ",}");
+    const SUFFIX = "(?:s|es|ed|ing|hole|holes|head|heads|face)?";
+    CATS.forEach(c => {
+      const list = (c.words + " " + (CFG.blockMildCurses && c.mild ? c.mild : "")).split(" ").filter(Boolean);
+      c.word = new RegExp("^(?:" + list.map(rep).join("|") + ")" + SUFFIX + "$");
+      c.subRe = new RegExp(c.sub.split(" ").map(rep).join("|"));
+      c.wildList = c.wild.split(" ");
+      c.phraseList = c.phrases ? c.phrases.split("|") : [];
+    });
+
+    /* ------------------------------------------------------------------
+       Text normalising (this is what defeats most tricks)
+       ------------------------------------------------------------------ */
+    const INVIS = /[\u200b-\u200f\u2028\u2029\u202a-\u202e\u2060-\u2064\ufeff\u00ad]/g;
+    const HOMO = {
+      "\u0430":"a","\u0435":"e","\u043e":"o","\u0440":"p","\u0441":"c","\u0445":"x","\u0443":"y","\u0456":"i","\u0455":"s","\u0458":"j",
+      "\u03b1":"a","\u03bf":"o","\u03c1":"p","\u03bd":"v","\u03b9":"i","\u03ba":"k","\u03c4":"t","\u03c5":"u","\u03b5":"e","\u0131":"i"
+    };
+    const HOMO_RE = new RegExp("[" + Object.keys(HOMO).join("") + "]", "g");
+    const LEET = { "0":"o", "3":"e", "4":"a", "5":"s", "7":"t", "@":"a", "$":"s" };
+
+    function fold(raw, oneAs) {
+      let s = raw.replace(INVIS, "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      s = s.replace(HOMO_RE, c => HOMO[c]);
+      s = s.replace(/([a-z0-9])[!|+]+(?=[a-z0-9])/g, (m, c) => c + (m.indexOf("+") > -1 ? "t" : "i"));
+      return s.replace(/1/g, oneAs).replace(/[03457@$]/g, c => LEET[c]);
+    }
+
+    function tokensOf(raw) {
+      const out = new Set(), flats = [];
+      for (const one of ["i", "l"]) {
+        const s = fold(raw, one);
+        const A = s.split(/[^a-z*]+/).filter(Boolean);
+        A.forEach(t => out.add(t));
+        // f.u.c.k  /  fu-ck  /  f_u_c_k  (punctuation with no spaces) -> glued back together
+        s.replace(/([a-z*])[._\-'\u2019`~^,\/\\]+(?=[a-z*])/g, "$1").split(/[^a-z*]+/).filter(Boolean).forEach(t => out.add(t));
+        // f u c k  (single letters separated by spaces) -> joined
+        let run = [];
+        for (const t of A.concat([""])) {
+          if (t.length === 1 && t !== "*") run.push(t);
+          else { if (run.length >= 3) out.add(run.join("")); run = []; }
+        }
+        flats.push(" " + A.join(" ") + " ");
+      }
+      return { tokens: [...out], flats };
+    }
+
+    function wildMatch(t, words) {            // f*ck, sh*t, b**ch, a**
+      if (t.length < 3 || t[0] === "*") return false;
+      return words.some(w => w.length === t.length && [...t].every((ch, i) => ch === "*" || ch === w[i]));
+    }
+
+    function scanWords(raw) {
+      const { tokens, flats } = tokensOf(raw);
+      for (const t of tokens) {
+        if (SAFE.has(t)) continue;
+        for (const c of CATS) {
+          if (c.word.test(t) || c.subRe.test(t)) return c;
+          if (t.indexOf("*") > -1 && wildMatch(t, c.wildList)) return c;
+        }
+      }
+      for (const c of CATS) if (c.phraseList.some(p => flats.some(f => f.indexOf(" " + p + " ") > -1))) return c;
+      return null;
+    }
+
+    // returns a message string if the text is not allowed, otherwise null
+    function contentProblem(text) {
+      const hit = scanWords(text);
+      return hit ? MSG[hit.cat] : null;
+    }
+
+    /* ------------------------------------------------------------------
+       Spam patterns (judged purely on the message itself)
+       ------------------------------------------------------------------ */
+    function looksLikeSpam(s) {
+      const low = s.toLowerCase();
+      if (/(.)\1{9,}/su.test(low)) return true;                                   // aaaaaaaaaa / !!!!!!!!!!
+      const m = /(.{2,8}?)\1{5,}/su.exec(low);                                      // abcabcabcabcabcabc
+      if (m && m[0].length >= 16) return true;
+      const words = low.match(/\p{L}{2,}/gu) || [], seen = {};
+      let top = 0;
+      for (const w of words) top = Math.max(top, (seen[w] = (seen[w] || 0) + 1));
+      if (top >= 6 || (words.length >= 10 && Object.keys(seen).length / words.length < 0.35)) return true;  // buy buy buy buy...
+      if (/[bcdfghjklmnpqrstvwxz]{8,}/.test(low)) return true;                    // keyboard mashing
+      const flat = low.replace(/\s/g, "");
+      if (flat.length >= 14 && new Set(flat).size <= 3) return true;              // "abababababababab"
+      if ((s.match(/\n/g) || []).length > CFG.maxLineBreaks) return true;         // tall walls of line breaks
+      const alnum = (flat.match(/[\p{L}\p{N}]/gu) || []).length;
+      if (flat.length >= 12 && alnum / flat.length < 0.35) return true;           // mostly symbols / emoji
+      if (/[\u0300-\u036f]{4,}/.test(s)) return true;                             // zalgo text
+      const letters = s.match(/\p{L}/gu) || [], upper = s.match(/\p{Lu}/gu) || [];
+      if (letters.length >= CFG.shoutMinLetters && upper.length / letters.length > CFG.shoutRatio) return true; // SHOUTING
+      return false;
+    }
+
+    /* ------------------------------------------------------------------
+       Rate limiting + duplicate blocking (stored in this browser only, no accounts)
+       ------------------------------------------------------------------ */
+    const mem = {};
+    const load = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch (_) { return mem[k] || []; } };
+    const save = (k, v) => { mem[k] = v; try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} };
+    const keyOf = s => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+    const tidy = s => s.replace(INVIS, "").replace(/[ \t\u00a0]+/g, " ").replace(/\s*\n\s*/g, "\n").trim();
+
+    /* ------------------------------------------------------------------
+       Bot trap: did a human actually type in the message box?
+       ------------------------------------------------------------------ */
+    const loadedAt = Date.now();
+    let interacted = false;
+    ["input", "keydown", "paste"].forEach(ev =>
+      document.addEventListener(ev, e => { if (e.target && e.target.id === "message") interacted = true; }, true));
+
+    function say(t) { const st = document.getElementById("status"); if (st) st.textContent = t; }
+
+    /* ------------------------------------------------------------------
+       The check that runs when someone presses SUBMIT
+       ------------------------------------------------------------------ */
+    function vet() {
+      const nameEl = document.getElementById("name"), msgEl = document.getElementById("message");
+      if (!nameEl || !msgEl) return { ok: true };
+
+      if (Date.now() - loadedAt < CFG.minPageMs) return { ok: false, msg: "Hold on a second, then try again." };
+      if (!interacted) return { ok: false, msg: "Please type your message first." };
+
+      const name = tidy(nameEl.value), msg = tidy(msgEl.value);
+      if (!name || !msg) return { ok: false, msg: "Please fill in both fields." };
+      if (!/[\p{L}\p{N}]/u.test(name) || !/[\p{L}\p{N}]/u.test(msg)) return { ok: false, msg: "Please use real words." };
+
+      for (const text of [name, msg]) {                                                   // cursing / sexual / drugs
+        const why = contentProblem(text);
+        if (why) return { ok: false, msg: why };
+      }
+      if (looksLikeSpam(msg) || looksLikeSpam(name)) return { ok: false, msg: MSG.spam };
+
+      const now = Date.now(), sends = load("ss_sends").filter(t => now - t < 3600000), k = keyOf(msg);
+      const last = sends.length ? Math.max.apply(null, sends) : 0;
+      if (now - last < CFG.cooldownMs)
+        return { ok: false, msg: "Slow down \u2014 wait " + Math.ceil((CFG.cooldownMs - (now - last)) / 1000) + " more seconds." };
+      if (sends.filter(t => now - t < 60000).length >= CFG.maxPerMinute)
+        return { ok: false, msg: "Too many messages. Try again in a minute." };
+      if (sends.length >= CFG.maxPerHour)
+        return { ok: false, msg: "You\u2019ve hit the hourly limit. Please try again later." };
+      if (load("ss_recent").some(r => now - r.t < CFG.repeatWindowMs && r.k === k))
+        return { ok: false, msg: "You already sent that message." };
+
+      return { ok: true, name, msg, now, sends, k };
+    }
+
+    // Runs before your script.js sees the form. If the message is bad, script.js never runs.
+    document.addEventListener("submit", e => {
+      if (!e.target || e.target.id !== "guestbook-form") return;
+      const r = vet();
+      if (!r.ok) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        say(r.msg);
+        return;
+      }
+      document.getElementById("name").value = r.name;          // send the cleaned-up text
+      document.getElementById("message").value = r.msg;
+      r.sends.push(r.now); save("ss_sends", r.sends);
+      const rec = load("ss_recent").filter(x => r.now - x.t < CFG.repeatWindowMs);
+      rec.push({ k: r.k, t: r.now }); save("ss_recent", rec.slice(-20));
+      say("");
+    }, true);
+
+    /* ------------------------------------------------------------------
+       Safety net: if anything else in the page tries to POST text to
+       Supabase, run the content filter on it too.
+       ------------------------------------------------------------------ */
+    const SKIP_KEYS = new Set(["id", "created_at", "user_id", "uuid", "ip"]);
+    const realFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      try {
+        const url = typeof input === "string" ? input : (input && input.url) || String(input);
+        const method = String((init && init.method) || (input && input.method) || "GET").toUpperCase();
+        if (/\/rest\/v1\//.test(url) && /^(POST|PATCH|PUT)$/.test(method) && init && typeof init.body === "string") {
+          const data = JSON.parse(init.body);
+          const bad = (Array.isArray(data) ? data : [data]).some(row => row && typeof row === "object" &&
+            Object.keys(row).some(key => typeof row[key] === "string" && !SKIP_KEYS.has(key) && contentProblem(row[key])));
+          if (bad) {
+            return Promise.resolve(new Response(
+              JSON.stringify({ code: "FILTERED", message: "Message blocked by the content filter." }),
+              { status: 400, headers: { "Content-Type": "application/json" } }));
+          }
+        }
+      } catch (_) { /* not JSON or not ours: let it through */ }
+      return realFetch(input, init);
+    };
+  })();
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="script.js"></script>
 
