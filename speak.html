@@ -66,9 +66,9 @@
       maxPerHour      : 40,            // max messages per hour from one browser
       repeatWindowMs  : 5 * 60 * 1000, // can't send the same message again within this time
       minPageMs       : 1500,          // submitting faster than this after page load = bot
-      shoutMinLetters : 30,            // ALL CAPS rule only applies to messages with this many letters...
-      shoutRatio      : 0.9,           // ...and more than this share of capitals
-      maxLineBreaks   : 6              // max line breaks in one message
+      shoutMinLetters : 500,            // ALL CAPS rule only applies to messages with this many letters...
+      shoutRatio      : 1,           // ...and more than this share of capitals
+      maxLineBreaks   : 30              // max line breaks in one message
     };
 
     /* ------------------------------------------------------------------
@@ -120,10 +120,10 @@
       "weeding weeded weeder weeders pricked pricking kinked kinking cocked cocking craps").split(" "));
 
     const MSG = {
-      curse : "Please keep it clean \u2014 no cursing.",
-      sexual: "Please keep it clean \u2014 no sexual content.",
-      drugs : "Please keep it clean \u2014 no drug references.",
-      spam  : "That looks like spam. Please write a normal message."
+      curse : "You will swiftly die \u2014 if you send this.",
+      sexual: "You will swiftly die \u2014 if you send this.",
+      drugs : "You will swiftly die \u2014 if you send this.",
+      spam  : "You will swiftly die \u2014 if you send this."
     };
 
     /* ------------------------------------------------------------------
